@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import { ProfileData, SampleVideo } from './types';
 import { INITIAL_PROFILE_DATA } from './data/portfolioData';
+import { getDirectImageUrl, getGoogleDriveFileId } from './utils/imageUtils';
 import {
   Instagram,
   Mail,
@@ -18,21 +19,25 @@ import {
   VolumeX,
   ChevronDown
 } from 'lucide-react';
-import profilePhoto from './assets/profile.jpg';
 
 export default function App() {
   const [profile, setProfile] = useState<ProfileData>(() => {
     try {
-      const saved = localStorage.getItem('pato_profile_data_v12');
+      const saved = localStorage.getItem('pato_profile_data_v6');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
-          const isCustomPhoto = parsed.photoUrl && (parsed.photoUrl.startsWith('data:') || parsed.photoUrl.startsWith('http'));
           return {
             name: parsed.name || INITIAL_PROFILE_DATA.name,
             role: parsed.role || INITIAL_PROFILE_DATA.role,
             phrase: parsed.phrase || INITIAL_PROFILE_DATA.phrase,
-            photoUrl: isCustomPhoto ? parsed.photoUrl : INITIAL_PROFILE_DATA.photoUrl,
+            photoUrl: (() => {
+              const p = parsed.photoUrl;
+              if (!p || p === './profile.jpg' || p === 'profile.jpg' || p.includes('unsplash.com')) {
+                return INITIAL_PROFILE_DATA.photoUrl;
+              }
+              return getDirectImageUrl(p);
+            })(),
             instagram: {
               handle: parsed.instagram?.handle || INITIAL_PROFILE_DATA.instagram.handle,
               url: parsed.instagram?.url || INITIAL_PROFILE_DATA.instagram.url,
@@ -117,7 +122,10 @@ export default function App() {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    setProfile(editForm);
+    setProfile({
+      ...editForm,
+      photoUrl: getDirectImageUrl(editForm.photoUrl)
+    });
     setIsEditModalOpen(false);
   };
 
@@ -131,7 +139,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('pato_profile_data_v12', JSON.stringify(profile));
+      localStorage.setItem('pato_profile_data_v6', JSON.stringify(profile));
     } catch {
       // Ignore
     }
@@ -251,11 +259,19 @@ export default function App() {
             {/* Profile Photo */}
             <div className="relative inline-block">
               <img
-                src={profile.photoUrl || profilePhoto}
+                src={getDirectImageUrl(profile.photoUrl) || './profile.jpg'}
                 alt={profile.name || 'Patricio Suarez'}
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  e.currentTarget.src = profilePhoto;
+                  const currentSrc = e.currentTarget.src;
+                  const fileId = getGoogleDriveFileId(profile.photoUrl);
+                  if (fileId && currentSrc.includes('lh3.googleusercontent.com')) {
+                    e.currentTarget.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                  } else if (fileId && currentSrc.includes('thumbnail')) {
+                    e.currentTarget.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                  } else if (!currentSrc.endsWith('profile.jpg')) {
+                    e.currentTarget.src = './profile.jpg';
+                  }
                 }}
                 className="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover border-2 border-zinc-200 shadow-sm mx-auto filter grayscale hover:grayscale-0 transition-all duration-700"
               />

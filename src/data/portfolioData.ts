@@ -1,11 +1,11 @@
 import { ProfileData } from '../types';
-import profilePhoto from '../assets/profile.jpg';
+import { getDirectImageUrl } from '../utils/imageUtils';
 
 export const INITIAL_PROFILE_DATA: ProfileData = {
   name: 'Patricio Suarez',
   role: 'Editor de video y Creador de contenido',
   phrase: 'Aumento el valor percibido de empresas y emprendimientos para obtener más ingresos y mejores clientes.',
-  photoUrl: profilePhoto,
+  photoUrl: getDirectImageUrl('https://drive.google.com/file/d/1ivjFVQyvtPoFyomX51yGrs-U4M14kusv/view?usp=sharing'),
   instagram: {
     handle: '@pato.suarezz',
     url: 'https://instagram.com/pato.suarezz'
