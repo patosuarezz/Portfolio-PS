@@ -14,7 +14,6 @@ import {
   X,
   Plus,
   Maximize2,
-  Film,
   Volume2,
   VolumeX,
   ChevronDown
@@ -75,8 +74,6 @@ export default function App() {
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [activeVideoModal, setActiveVideoModal] = useState<SampleVideo | null>(null);
-  const [editingVideoIndex, setEditingVideoIndex] = useState<number | null>(null);
-  const [tempVideoUrl, setTempVideoUrl] = useState('');
   const [isMuted, setIsMuted] = useState(true);
 
   // Edit profile state
@@ -149,39 +146,6 @@ export default function App() {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handleUpdateVideoUrl = (index: number | null, newUrl?: string) => {
-    if (index === null || index === undefined || !newUrl || typeof newUrl !== 'string' || !newUrl.trim()) return;
-    const updated = [...profile.sampleVideos];
-    if (updated[index]) {
-      updated[index] = {
-        ...updated[index],
-        videoUrl: newUrl.trim()
-      };
-      setProfile(prev => ({ ...prev, sampleVideos: updated }));
-    }
-    setEditingVideoIndex(null);
-    setTempVideoUrl('');
-  };
-
-  const handleVideoFileUpload = (index: number | null, file: File) => {
-    if (index === null || index === undefined) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        const updated = [...profile.sampleVideos];
-        if (updated[index]) {
-          updated[index] = {
-            ...updated[index],
-            videoUrl: reader.result as string
-          };
-          setProfile(prev => ({ ...prev, sampleVideos: updated }));
-        }
-        setEditingVideoIndex(null);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   const getEmbedInfo = (url?: string) => {
@@ -396,17 +360,6 @@ export default function App() {
                         {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                       </button>
                     )}
-
-                    <button
-                      onClick={() => {
-                        setEditingVideoIndex(0);
-                        setTempVideoUrl(video.videoUrl);
-                      }}
-                      className="p-3.5 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-colors"
-                      title="Cambiar video"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
                   </div>
                 </motion.div>
               );
@@ -455,17 +408,6 @@ export default function App() {
                       title="Ver en pantalla completa"
                     >
                       <Play className="w-5 h-5 fill-zinc-900 ml-0.5" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setEditingVideoIndex(actualIdx);
-                        setTempVideoUrl(video.videoUrl);
-                      }}
-                      className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-colors"
-                      title="Cambiar video"
-                    >
-                      <Plus className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>
@@ -644,77 +586,6 @@ export default function App() {
                   />
                 );
               })()}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* CHANGE VIDEO URL / FILE MODAL */}
-      <AnimatePresence>
-        {editingVideoIndex !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          >
-            <div className="relative w-full max-w-md bg-white border border-zinc-200 rounded-2xl p-6 shadow-xl space-y-4 text-zinc-900">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                <h3 className="font-syne text-lg font-normal">
-                  Actualizar Video de Muestra {editingVideoIndex + 1}
-                </h3>
-                <button
-                  onClick={() => setEditingVideoIndex(null)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-900"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="block text-zinc-500 mb-1">Subir video desde dispositivo</label>
-                  <label className="cursor-pointer flex items-center justify-center gap-2 p-3 rounded-lg bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-800 text-xs font-medium transition-colors">
-                    <Film className="w-4 h-4" />
-                    <span>Seleccionar archivo MP4</span>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleVideoFileUpload(editingVideoIndex, file);
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-zinc-500">O pegar enlace (Vimeo, YouTube o MP4)</label>
-                  <input
-                    type="url"
-                    placeholder="https://vimeo.com/... o https://..."
-                    value={tempVideoUrl}
-                    onChange={(e) => setTempVideoUrl(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:border-zinc-900 text-xs font-mono"
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => setEditingVideoIndex(null)}
-                    className="px-4 py-2 rounded-lg text-zinc-600 hover:bg-zinc-100"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => handleUpdateVideoUrl(editingVideoIndex, tempVideoUrl)}
-                    className="px-4 py-2 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800"
-                  >
-                    Guardar Video
-                  </button>
-                </div>
-              </div>
             </div>
           </motion.div>
         )}
