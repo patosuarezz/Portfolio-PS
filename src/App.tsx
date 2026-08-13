@@ -22,7 +22,7 @@ import {
 export default function App() {
   const [profile, setProfile] = useState<ProfileData>(() => {
     try {
-      const saved = localStorage.getItem('pato_profile_data_v4');
+      const saved = localStorage.getItem('pato_profile_data_v6');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
@@ -30,7 +30,7 @@ export default function App() {
             name: parsed.name || INITIAL_PROFILE_DATA.name,
             role: parsed.role || INITIAL_PROFILE_DATA.role,
             phrase: parsed.phrase || INITIAL_PROFILE_DATA.phrase,
-            photoUrl: parsed.photoUrl || INITIAL_PROFILE_DATA.photoUrl,
+            photoUrl: (parsed.photoUrl && !parsed.photoUrl.includes('unsplash.com')) ? parsed.photoUrl : INITIAL_PROFILE_DATA.photoUrl,
             instagram: {
               handle: parsed.instagram?.handle || INITIAL_PROFILE_DATA.instagram.handle,
               url: parsed.instagram?.url || INITIAL_PROFILE_DATA.instagram.url,
@@ -45,11 +45,17 @@ export default function App() {
               waLink: parsed.whatsapp?.waLink || INITIAL_PROFILE_DATA.whatsapp.waLink,
             },
             sampleVideos: Array.isArray(parsed.sampleVideos) && parsed.sampleVideos.length > 0
-              ? parsed.sampleVideos.map((v: any, idx: number) => ({
-                  id: v?.id || `v${idx + 1}`,
-                  videoUrl: typeof v?.videoUrl === 'string' && v.videoUrl ? v.videoUrl : INITIAL_PROFILE_DATA.sampleVideos[idx]?.videoUrl || '',
-                  posterUrl: typeof v?.posterUrl === 'string' ? v.posterUrl : ''
-                }))
+              ? parsed.sampleVideos.map((v: any, idx: number) => {
+                  const defaultVideo = INITIAL_PROFILE_DATA.sampleVideos[idx] || INITIAL_PROFILE_DATA.sampleVideos[0];
+                  const videoUrl = (typeof v?.videoUrl === 'string' && v.videoUrl && !v.videoUrl.includes('mixkit.co')) 
+                    ? v.videoUrl 
+                    : defaultVideo.videoUrl;
+                  return {
+                    id: v?.id || `v${idx + 1}`,
+                    videoUrl: videoUrl,
+                    posterUrl: typeof v?.posterUrl === 'string' && v.posterUrl ? v.posterUrl : defaultVideo.posterUrl
+                  };
+                })
               : INITIAL_PROFILE_DATA.sampleVideos
           };
         }
@@ -123,7 +129,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('pato_profile_data_v4', JSON.stringify(profile));
+      localStorage.setItem('pato_profile_data_v6', JSON.stringify(profile));
     } catch {
       // Ignore
     }
@@ -171,7 +177,7 @@ export default function App() {
   const getEmbedInfo = (url?: string) => {
     if (!url || !url.trim()) return { isDirectVideo: true, url: null };
     const cleanUrl = url.trim();
-    if (cleanUrl.includes('vimeo.com')) {
+    if (cleanUrl.includes('vimeo.com') || cleanUrl.includes('player.vimeo.com')) {
       // Match numeric video ID from Vimeo URLs like /manage/videos/1217794909, /1217794909, /video/1217794909, etc.
       const match = cleanUrl.match(/(\d{6,12})/);
       if (match && match[1]) {
@@ -243,11 +249,11 @@ export default function App() {
             {/* Profile Photo */}
             <div className="relative inline-block">
               <img
-                src={profile.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'}
+                src={profile.photoUrl || './profile.jpg'}
                 alt={profile.name || 'Patricio Suarez'}
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+                  e.currentTarget.src = './profile.jpg';
                 }}
                 className="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover border-2 border-zinc-200 shadow-sm mx-auto filter grayscale hover:grayscale-0 transition-all duration-700"
               />
