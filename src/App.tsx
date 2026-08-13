@@ -23,7 +23,7 @@ import profilePhoto from './assets/profile.jpg';
 export default function App() {
   const [profile, setProfile] = useState<ProfileData>(() => {
     try {
-      const saved = localStorage.getItem('pato_profile_data_v10');
+      const saved = localStorage.getItem('pato_profile_data_v12');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
@@ -131,7 +131,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('pato_profile_data_v10', JSON.stringify(profile));
+      localStorage.setItem('pato_profile_data_v12', JSON.stringify(profile));
     } catch {
       // Ignore
     }
